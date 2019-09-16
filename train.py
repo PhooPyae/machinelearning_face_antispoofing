@@ -21,20 +21,23 @@ imageLabels = []
 label_count = 0
 
 for folder in os.listdir(data_path):
-    if folder == '.DS_Store':
+    if(folder == '.DS_Store'):
         continue
     folder_name = data_path+'/'+folder
-    print(folder)
-    for file in os.listdir(folder_name):
-        if file == '.DS_Store':
+    for sub_folder in os.listdir(folder_name):
+        if(sub_folder == '.DS_Store'):
             continue
-        file_name = folder_name+'/'+file
-        imgRead = load_img(file_name,target_size = (64,64))
-        imgRead = img_to_array(imgRead)
-        imageData.append(imgRead)
-        imageLabels.append(label_count)
-    label_count += 1
-    print(imageLabels)
+        sub_folder_name = folder_name+'/'+sub_folder
+        for files in os.listdir(sub_folder_name):
+            if(files == '.DS_Store'):
+                continue
+            file_name = sub_folder_name+'/'+files
+            imgRead = load_img(file_name,target_size = (96,96))
+            imgRead = img_to_array(imgRead)
+            imageData.append(imgRead)
+            imageLabels.append(label_count)
+        label_count += 1
+        print(imageLabels)
 
 X_train, X_test, Y_train, Y_test = train_test_split(imageData,imageLabels,test_size=0.2)
 
@@ -48,7 +51,7 @@ nb_classes = 3
 Y_train = to_categorical(Y_train, nb_classes)
 Y_test = to_categorical(Y_test, nb_classes)
 
-input_shape = (64, 64, 3)
+# input_shape = (64, 64, 3)
 
 X_train = X_train.astype('float32')
 X_test = X_test.astype('float32')
@@ -58,36 +61,31 @@ X_test /= 255
 
 # BUILD THE MODEL
 model = Sequential()
-
-model.add(Convolution2D(32, 3, 3, border_mode='same', input_shape=input_shape))
-model.add(Activation('relu'))
-model.add(Convolution2D(32, 3, 3))
-model.add(Activation('relu'))
-model.add(MaxPooling2D(pool_size=(2, 2)))
-model.add(Dropout(0.25))
-
-model.add(Convolution2D(64, 3, 3, border_mode='same'))
-model.add(Activation('relu'))
-model.add(Convolution2D(64, 3, 3))
-model.add(Activation('relu'))
-model.add(MaxPooling2D(pool_size=(2, 2)))
-model.add(Dropout(0.25))
-
-model.add(Convolution2D(64, 3, 3, border_mode='same'))
-model.add(Activation('relu'))
-model.add(Convolution2D(64, 3, 3))
-model.add(Activation('relu'))
-model.add(MaxPooling2D(pool_size=(2, 2)))
-model.add(Dropout(0.25))
-
+model.add(Conv2D(50, kernel_size=(5, 5), strides=(1, 1),activation='relu',input_shape=(96,96,3),padding='same'))
+model.add(BatchNormalization())
+model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+model.add(Conv2D(100, (3, 3),strides=(1,1), activation='relu',padding='same'))
+model.add(BatchNormalization())
+model.add(MaxPooling2D(pool_size=(2, 2),strides=(2,2)))
+model.add(Conv2D(150, (3, 3),strides=(1,1), activation='relu',padding='same'))
+model.add(BatchNormalization())
+model.add(MaxPooling2D(pool_size=(2, 2),strides=(2,2)))
+model.add(Conv2D(200, (3, 3),strides=(1,1), activation='relu',padding='same'))
+model.add(BatchNormalization())
+model.add(MaxPooling2D(pool_size=(2, 2),strides=(2,2)))
+model.add(Conv2D(250, (3, 3),strides=(1,1), activation='relu',padding='same'))
+model.add(BatchNormalization())
+model.add(MaxPooling2D(pool_size=(2, 2),strides=(2,2)))
 model.add(Flatten())
-model.add(Dense(512))
-model.add(Activation('relu'))
+model.add(Dense(1000, activation='relu'))
+model.add(BatchNormalization())
 model.add(Dropout(0.5))
-model.add(Dense(nb_classes))
-model.add(Activation('softmax'))
+model.add(Dense(400, activation='relu'))
+model.add(BatchNormalization())
+model.add(Dense(2,activation='softmax'))
+model.summary()
 
-# TRAIN THE MODEL
+# TRAIN THE MODEL 
 adam = Adam(lr=0.0001)
 model.compile(loss='binary_crossentropy', optimizer=adam, metrics=['accuracy'])
 
@@ -96,7 +94,7 @@ model.fit(X_train, Y_train, batch_size=5, epochs=30,
                  verbose=1, validation_data=(X_test, Y_test))
 
 #save model
-model.save('models/model_v3.h5')
+model.save('models/model.h5')
 print("Saved model to disk")
 
 prediction = model.predict(X_test)
