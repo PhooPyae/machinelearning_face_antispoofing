@@ -15,11 +15,13 @@ for folder in os.listdir(data_path):
         for files in os.listdir(sub_folder_name):
             if(files == 'DS_Store'):
                 continue
-            file_name = sub_folder_name+'/'files
+            file_name = sub_folder_name+'/'+files
             print(file_name)
             image = cv2.imread(file_name)
             sift = cv2.xfeatures2d.SIFT_create()
             kp1,des1 = sift.detectAndCompute(image,None)
+            print('key point adn destination',kp1,des1)
+            print('------------------')
             m,n,q = np.shape(image)
             for i in range(0,len(kp1)):
                 p1 = int(kp1[i].pt[0])
