@@ -22,7 +22,7 @@ for folder in os.listdir(data_path):
             convface = cv2.cvtColor(image,cv2.COLOR_BGR2HSV)
             sift = cv2.xfeatures2d.SIFT_create()
             kp1,des1 = sift.detectAndCompute(convface,None)
-            print('key point adn destination',kp1,des1)
+            print('key point and destination',kp1,des1)
             print('------------------')
             m,n,q = np.shape(image)
             for i in range(0,len(kp1)):

@@ -10,6 +10,7 @@ from keras.metrics import categorical_crossentropy
 from keras.preprocessing.image import ImageDataGenerator
 
 import pickle
+from pickle import dump
 
 import numpy as np
 import os
@@ -31,11 +32,11 @@ print('features and labels are loaded')
 # close the file
 X_train, X_test, Y_train, Y_test = train_test_split(X,y,test_size=0.2)
 
-X_train = np.array(X_train)
-X_test = np.array(X_test)
+# X_train = np.array(X_train)
+# X_test = np.array(X_test)
 
-Y_train = np.array(Y_train) 
-Y_test = np.array(Y_test)
+# Y_train = np.array(Y_train) 
+# Y_test = np.array(Y_test)
 
 # nb_classes = 2
 # Y_train = to_categorical(Y_train, nb_classes)
@@ -55,9 +56,9 @@ print(np.shape(X_test))
 print(np.shape(Y_test))
 
 augmented_image = ImageDataGenerator(
-    shear_range=0.2
+    shear_range=0
 )
-augmented_image.fit(X_train)
+# augmented_image.fit(X_train)
 
 logdir = "logs/scalars/" + datetime.now().strftime("%Y%m%d-%H%M%S")
 tensorboard_callback = keras.callbacks.TensorBoard(log_dir=logdir)
@@ -85,6 +86,7 @@ model.add(BatchNormalization())
 model.add(Dropout(0.5))
 model.add(Dense(400, activation='relu'))
 model.add(BatchNormalization())
+model.add(Dropout(0.5))
 model.add(Dense(2,activation='softmax'))
 model.summary()
 
@@ -101,7 +103,7 @@ verbose=1,steps_per_epoch = X_train.shape[0]//batch_size,callbacks=[tensorboard_
 # #                  verbose=1, validation_data=(X_test, Y_test))
 
 #save model
-model.save('models/model.h5')
+model.save('models/model'+datetime.now().strftime("%Y%m%d-%H%M%S")+'.h5')
 print("Saved model to disk")
 
 prediction = model.predict(X_test)
