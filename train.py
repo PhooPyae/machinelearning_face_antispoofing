@@ -3,43 +3,29 @@ from keras.preprocessing.image import img_to_array
 from keras.utils import to_categorical
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Activation, Flatten
-from keras.layers import Convolution2D, MaxPooling2D
+from keras.layers import Conv2D, MaxPooling2D, BatchNormalization, Dropout, Flatten
 from keras.optimizers import Adam
+from keras.metrics import categorical_crossentropy
+from keras.preprocessing.image import ImageDataGenerator
 
-from pickle import dump
+import pickle
 
 import numpy as np
 import os
 
 from sklearn.model_selection import train_test_split
+from keras.metrics import accuracy_score
 
-#PREPROCESSING
-DatasetPath = []
-data_path = 'dataset'
-imageData = []
-imageLabels = []
-label_count = 0
+train_path = 'dataset'
 
-for folder in os.listdir(data_path):
-    if(folder == '.DS_Store'):
-        continue
-    folder_name = data_path+'/'+folder
-    for sub_folder in os.listdir(folder_name):
-        if(sub_folder == '.DS_Store'):
-            continue
-        sub_folder_name = folder_name+'/'+sub_folder
-        for files in os.listdir(sub_folder_name):
-            if(files == '.DS_Store'):
-                continue
-            file_name = sub_folder_name+'/'+files
-            imgRead = load_img(file_name,target_size = (96,96))
-            imgRead = img_to_array(imgRead)
-            imageData.append(imgRead)
-            imageLabels.append(label_count)
-        label_count += 1
-        print(imageLabels)
+train_batches = ImageDataGenerator.flow_from_directory(rain_path,target_size=(96,96),color_model='rgb',class_mode='categorical',batch_size=500,shuffle=True)
+X, y = next(train_batches)
+print(y)
 
-X_train, X_test, Y_train, Y_test = train_test_split(imageData,imageLabels,test_size=0.2)
+print('features and labels are loaded')
+
+# close the file
+X_train, X_test, Y_train, Y_test = train_test_split(X,y,test_size=0.2)
 
 X_train = np.array(X_train)
 X_test = np.array(X_test)
@@ -58,6 +44,16 @@ X_test = X_test.astype('float32')
 
 X_train /= 255
 X_test /= 255
+
+print(np.shape(X_train))
+print(np.shape(Y_train))
+print(np.shape(X_test))
+print(np.shape(Y_test))
+
+augmented_image = ImageDatGenerator(
+    shear_range=0.2
+)
+augmented_image.fit(X_train)
 
 # BUILD THE MODEL
 model = Sequential()
@@ -87,11 +83,15 @@ model.summary()
 
 # TRAIN THE MODEL 
 adam = Adam(lr=0.0001)
-model.compile(loss='binary_crossentropy', optimizer=adam, metrics=['accuracy'])
+model.compile(loss='categorical_crossentropy', optimizer=adam, metrics=['accuracy'])
 
+batch_size = 32
+epochs = 20
 
-model.fit(X_train, Y_train, batch_size=5, epochs=30,
-                 verbose=1, validation_data=(X_test, Y_test))
+model.fit_generator(augmented_image.flow(X_train,Y_train,batch_size=batch_size),epochs=epochs,validation_data=(X_test,Y_test),
+verbose=2,steps_per_epoch = X_train.shape[0]//batch_size)
+# model.fit(X_train, Y_train, batch_size=32, epochs=20,
+#                  verbose=1, validation_data=(X_test, Y_test))
 
 #save model
 model.save('models/model.h5')
@@ -104,4 +104,3 @@ print('saved predicted model')
 scores = model.evaluate(X_test, Y_test, verbose=0)
 print(scores)
 print("%s: %.2f%%" % (model.metrics_names[1], scores[1]*100))
-
