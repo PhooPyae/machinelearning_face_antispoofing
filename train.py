@@ -1,3 +1,4 @@
+import keras
 from keras.preprocessing.image import load_img
 from keras.preprocessing.image import img_to_array
 from keras.utils import to_categorical
@@ -14,13 +15,16 @@ import numpy as np
 import os
 
 from sklearn.model_selection import train_test_split
-from keras.metrics import accuracy_score
+from sklearn.metrics import accuracy_score
+
+from datetime import datetime
 
 train_path = 'dataset'
 
-train_batches = ImageDataGenerator.flow_from_directory(rain_path,target_size=(96,96),color_model='rgb',class_mode='categorical',batch_size=500,shuffle=True)
+train_batches = ImageDataGenerator().flow_from_directory(train_path,target_size=(96,96),color_mode='rgb',class_mode='categorical',batch_size=150,shuffle=True)
 X, y = next(train_batches)
-print(y)
+print(np.shape(X))
+print(np.shape(y))
 
 print('features and labels are loaded')
 
@@ -33,9 +37,9 @@ X_test = np.array(X_test)
 Y_train = np.array(Y_train) 
 Y_test = np.array(Y_test)
 
-nb_classes = 3
-Y_train = to_categorical(Y_train, nb_classes)
-Y_test = to_categorical(Y_test, nb_classes)
+# nb_classes = 2
+# Y_train = to_categorical(Y_train, nb_classes)
+# Y_test = to_categorical(Y_test, nb_classes)
 
 # input_shape = (64, 64, 3)
 
@@ -50,10 +54,13 @@ print(np.shape(Y_train))
 print(np.shape(X_test))
 print(np.shape(Y_test))
 
-augmented_image = ImageDatGenerator(
+augmented_image = ImageDataGenerator(
     shear_range=0.2
 )
 augmented_image.fit(X_train)
+
+logdir = "logs/scalars/" + datetime.now().strftime("%Y%m%d-%H%M%S")
+tensorboard_callback = keras.callbacks.TensorBoard(log_dir=logdir)
 
 # BUILD THE MODEL
 model = Sequential()
@@ -86,12 +93,12 @@ adam = Adam(lr=0.0001)
 model.compile(loss='categorical_crossentropy', optimizer=adam, metrics=['accuracy'])
 
 batch_size = 32
-epochs = 20
+epochs = 500
 
 model.fit_generator(augmented_image.flow(X_train,Y_train,batch_size=batch_size),epochs=epochs,validation_data=(X_test,Y_test),
-verbose=2,steps_per_epoch = X_train.shape[0]//batch_size)
-# model.fit(X_train, Y_train, batch_size=32, epochs=20,
-#                  verbose=1, validation_data=(X_test, Y_test))
+verbose=1,steps_per_epoch = X_train.shape[0]//batch_size,callbacks=[tensorboard_callback],)
+# # model.fit(X_train, Y_train, batch_size=32, epochs=20,
+# #                  verbose=1, validation_data=(X_test, Y_test))
 
 #save model
 model.save('models/model.h5')
