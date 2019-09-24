@@ -22,7 +22,7 @@ from datetime import datetime
 
 train_path = 'dataset'
 
-train_batches = ImageDataGenerator().flow_from_directory(train_path,target_size=(96,96),color_mode='rgb',class_mode='categorical',batch_size=1000,shuffle=True)
+train_batches = ImageDataGenerator().flow_from_directory(train_path,target_size=(96,96),color_mode='rgb',class_mode='categorical',batch_size=800,shuffle=True)
 X, y = next(train_batches)
 print(np.shape(X))
 print(np.shape(y))
@@ -65,11 +65,11 @@ tensorboard_callback = keras.callbacks.TensorBoard(log_dir=logdir)
 
 #BUILD THE MODEL
 model = Sequential()
-model.add(Conv2D(10, kernel_size=(5, 5), strides=(1, 1),activation='relu',input_shape=(96,96,3),padding='same'))
+model.add(Conv2D(16, kernel_size=(5, 5), strides=(1, 1),activation='relu',input_shape=(96,96,3),padding='same'))
 model.add(BatchNormalization())
 model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
 
-model.add(Conv2D(16, (3, 3),strides=(1,1), activation='relu',padding='same'))
+model.add(Conv2D(32, (3, 3),strides=(1,1), activation='relu',padding='same'))
 model.add(BatchNormalization())
 model.add(MaxPooling2D(pool_size=(2, 2),strides=(2,2)))
 
@@ -81,13 +81,15 @@ model.add(Conv2D(64, (3, 3),strides=(1,1), activation='relu',padding='same'))
 model.add(BatchNormalization())
 model.add(MaxPooling2D(pool_size=(2, 2),strides=(2,2)))
 
-model.add(Conv2D(24, (3, 3),strides=(1,1), activation='relu',padding='same'))
+model.add(Conv2D(16, (3, 3),strides=(1,1), activation='relu',padding='same'))
 model.add(BatchNormalization())
 model.add(MaxPooling2D(pool_size=(2, 2),strides=(2,2)))
 
 model.add(Flatten())
 
-model.add(Dense(1000, activation='relu'))
+model.add(Dropout(0.5))
+
+model.add(Dense(2000, activation='relu'))
 model.add(BatchNormalization())
 
 model.add(Dropout(0.5))
@@ -102,8 +104,8 @@ model.summary()
 adam = Adam(lr=0.0001)
 model.compile(loss='categorical_crossentropy', optimizer=adam, metrics=['accuracy'])
 
-batch_size = 64
-epochs = 200
+batch_size = 16
+epochs = 150
 
 model.fit_generator(augmented_image.flow(X_train,Y_train,batch_size=batch_size),epochs=epochs,validation_data=(X_test,Y_test),
 verbose=1,steps_per_epoch = X_train.shape[0]//batch_size,callbacks=[tensorboard_callback],)
