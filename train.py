@@ -65,6 +65,7 @@ tensorboard_callback = keras.callbacks.TensorBoard(log_dir=logdir)
 
 #BUILD THE MODEL
 model = Sequential()
+
 model.add(Conv2D(8, kernel_size=(5, 5), strides=(1, 1),activation='relu',input_shape=(96,96,3),padding='same'))
 model.add(BatchNormalization())
 model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
@@ -123,3 +124,12 @@ print('saved predicted model')
 scores = model.evaluate(X_test, Y_test, verbose=0)
 print(scores)
 print("%s: %.2f%%" % (model.metrics_names[1], scores[1]*100))
+
+#Confution Matrix and Classification Report
+Y_pred = model.predict_generator(augmented_image.flow(X_test,Y_test), X_train.shape[0]//batch_size+1)
+y_pred = np.argmax(Y_pred, axis=1)
+print('Confusion Matrix')
+print(confusion_matrix(Y_test, y_pred))
+print('Classification Report')
+target_names = ['Live', 'Spoof']
+print(classification_report(classes, y_pred, target_names=target_names))

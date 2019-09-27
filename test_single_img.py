@@ -25,7 +25,7 @@ def main(args):
     model = cv2.dnn.readNetFromCaffe(prototxt_path, caffemodel_path)
 
     image = cv2.imread(test_image)
-    print('Image shape',np.shape(image))
+    # print('Image shape',np.shape(image))
     (h, w) = image.shape[:2]
     blob = cv2.dnn.blobFromImage(cv2.resize(image, (300, 300)), 1.0, (300, 300), (104.0, 177.0, 123.0))
 
@@ -55,10 +55,12 @@ def main(args):
         if (p1>32 and p1<(m-32)) and (q1>32 and q1<(n-32)):
             patch = image[p1-32:p1+32,q1-32:q1+32]
             patch = cv2.resize(patch,target_size)
-            patch = np.reshape(patch,(1,patch.shape[0],patch.shape(1),patch.shape(2)))
-            print(np.shape(patch))
+            patch = np.reshape(patch,(1,patch.shape[0],patch.shape[1],patch.shape[2]))
+            # print(np.shape(patch))
             prediction = model_loaded.predict_proba(patch)
             print(prediction)
+            predict_class = model_loaded.predict_classes(patch)
+            print('predict classes',predict_class)
 
 
 if __name__ == '__main__':
