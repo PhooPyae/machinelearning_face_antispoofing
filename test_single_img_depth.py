@@ -2,7 +2,7 @@ import numpy as np
 from keras.models import load_model
 import cv2
 from sklearn.metrics import accuracy_score
-from pickle import dump
+import pickle as pkl
 from keras.utils import to_categorical
 import sklearn
 import os
@@ -13,45 +13,66 @@ from skimage.transform import rescale, resize
 from time import time
 import ast
 from api import PRN
+from utils.render_app import get_visibility, get_uv_mask, get_depth_image
 
-if __name__='__main__':
-    prn = PRN(is_dlib = True)
-    test_image = args.inputImage
-    target_size = (96,96)
-    
-    #image must be cropped face image
-    model_loaded = load_model('models/model20190926-141500.h5')
+def predict_image(svm_model,path,target_size=224):
+	model = VGG16()
+	# Modify model to remove the last layer
+	model.layers.pop()
+	model = Model(inputs=model.inputs, outputs=model.layers[-1].output)
 
-    model_loaded.summary()
-    
-    base_dir = os.path.dirname(__file__)
-    prototxt_path = os.path.join(base_dir + 'model_data/deploy.prototxt')
-    caffemodel_path = os.path.join(base_dir + 'model_data/weights.caffemodel')
+	image = load_img(path, target_size=(target_size, target_size))
+	image = img_to_array(image)
 
-    # Read the model
-    model = cv2.dnn.readNetFromCaffe(prototxt_path, caffemodel_path)
+	image = image.reshape((1, image.shape[0], image.shape[1], image.shape[2]))
+	# prepare the image for the VGG model
+	image = preprocess_input(image)
+	# get features
+	img_feature = model.predict(image, verbose=0)
+	return svm_model.predict(list(img_feature))
 
-    image = cv2.imread(test_image)
-    # print('Image shape',np.shape(image))
-    (h, w) = image.shape[:2]
-    blob = cv2.dnn.blobFromImage(cv2.resize(image, (300, 300)), 1.0, (300, 300), (104.0, 177.0, 123.0))
+if __name__=='__main__':
+	predictions = []
+	prn = PRN(is_dlib = True)
+	test_path = 'test_data'
+	file = open('depth_features_labels/model.pkl', 'rb')
+	model = pkl.load(file)
 
-    model.setInput(blob)
-    detections = model.forward()
-    for i in range(0, detections.shape[1]):
-        box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
-        (startX, startY, endX, endY) = box.astype("int")
+	X_test = []
+	Y_test = []
+	classes_name = []
+	labels = 0
+	target_size = (96,96)
+	batch_size = 32
+	for folder in os.listdir(test_path):
+		if folder == '._DS_Store':
+			continue
+		folder_name = test_path+'/'+folder
+		classes_name.append(folder)
 
-        confidence = detections[0, 0, i, 2]
+		for files in os.listdir(folder_name):
+			if files == '._DS_Store':
+				continue
+			file_name = folder_name+'/'+files
+			image = imread(file_name)
+			[h, w, c] = image.shape
+			if c>3:
+				image = image[:,:,:3]
+			print(np.shape(image))
+			pos = prn.process(image)
+			vertices = prn.get_vertices(pos)
+			depth_image = get_depth_image(vertices, prn.triangles, h, w, True)
+			print(vertices)
+			print(np.shape(depth_image))
+			predict = model.predict(depth_image)
+			print(predict)
+			predictions.append(predict)
 
-        # If confidence > 0.5, show box around face
-        print('Confidence',confidence)
-        if (confidence > 0.5):
-            # cv2.rectangle(image, (startX, startY), (endX, endY), (255, 255, 255), 2)
-            subface = image[startY:endY , startX:endX]
-            print(np.shape(subface))
-            pos = prn.process(subface)
-            vertices = prn.get_vertices(pos)
-            depth_image = get_depth_image(vertices, prn.triangles, h, w, True)
-            print(vertices)
-            print(np.shape(vertices))
+			tn, fp, fn, tp = confusion_matrix(list(Y_test),predictions).ravel()
+
+			print("TP:",tp)
+			print("TN:",tn)
+			print("FP:",fp)
+			print("FN:",fn)
+
+			print("Accuracy:",(tp+tn)/(tp+tn+fp+fn))
