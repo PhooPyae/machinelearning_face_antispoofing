@@ -46,7 +46,7 @@ if __name__=='__main__':
 	predictions = []
 	prn = PRN(is_dlib = True)
 	test_path = 'test_data'
-	file = open('depth_features_labels/model.pkl', 'rb')
+	file = open('depth_features_labels/model_v1.pkl', 'rb')
 	svm = pkl.load(file)
 
 	labels = []

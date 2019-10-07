@@ -68,7 +68,7 @@ if __name__ == '__main__':
 
     model = train_svm(X_train,Y_train)
     print(model)
-    pkl.dump(model, open("depth_features_labels/model"+".pkl", 'wb'))
+    pkl.dump(model, open("depth_features_labels/model_v1"+".pkl", 'wb'))
 
     print("Now predicting...")
     for img in X_test:
