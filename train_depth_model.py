@@ -27,7 +27,7 @@ def train_svm(feature_vector,labels):
                     
     # model = RandomizedSearchCV(svc, param_distributions=parameters, verbose=10, n_jobs=4)
     # model.fit(X_train, y_train)
-    model = svm.SVC(kernel='poly',gamma=10,C=1000)
+    model = svm.SVC(kernel='poly',gamma=10,C=1000,probability=True)
     model.fit(feature_vector,labels)
     # print("best params: ", model.best_params_)
     return model
@@ -68,7 +68,7 @@ if __name__ == '__main__':
 
     model = train_svm(X_train,Y_train)
     print(model)
-    pkl.dump(model, open("depth_features_labels/model_v1"+".pkl", 'wb'))
+    pkl.dump(model, open("depth_features_labels/model_v2"+".pkl", 'wb'))
 
     print("Now predicting...")
     for img in X_test:
