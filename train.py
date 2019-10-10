@@ -1,4 +1,5 @@
 import keras
+import cv2
 from keras.preprocessing.image import load_img
 from keras.preprocessing.image import img_to_array
 from keras.utils import to_categorical
@@ -20,116 +21,137 @@ from sklearn.metrics import accuracy_score
 
 from datetime import datetime
 
-train_path = 'dataset'
+# def brightness_adjustment(img):
+#     # turn the image into the HSV space
+#     hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
+#     # creates a random bright
+#     ratio = .5 + np.random.uniform()
+#     # convert to int32, so you don't get uint8 overflow
+#     # multiply the HSV Value channel by the ratio
+#     # clips the result between 0 and 255
+#     # convert again to uint8
+#     hsv[:,:,2] =  np.clip(hsv[:,:,2].astype(np.int32) * ratio, 0, 255).astype(np.uint8)
+#     # return the image int the BGR color space
+#     return cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
 
-train_batches = ImageDataGenerator().flow_from_directory(train_path,target_size=(96,96),color_mode='rgb',class_mode='categorical',batch_size=800,shuffle=True)
-X, y = next(train_batches)
-print(np.shape(X))
-print(np.shape(y))
+if __name__ == '__main__':
+    train_path = 'new_dataset'
 
-print('features and labels are loaded')
+    train_batches = ImageDataGenerator().flow_from_directory(train_path,target_size=(96,96),color_mode='rgb',class_mode='categorical',batch_size=800,shuffle=True)
+    X, y = next(train_batches)
+    print(np.shape(X))
+    print(np.shape(y))
 
-# close the file
-X_train, X_test, Y_train, Y_test = train_test_split(X,y,test_size=0.2)
+    print('features and labels are loaded')
 
-# X_train = np.array(X_train)
-# X_test = np.array(X_test)
+    # close the file
+    X_train, X_test, Y_train, Y_test = train_test_split(X,y,test_size=0.2)
 
-# Y_train = np.array(Y_train) 
-# Y_test = np.array(Y_test)
+    # X_train = np.array(X_train)
+    # X_test = np.array(X_test)
 
-# nb_classes = 2
-# Y_train = to_categorical(Y_train, nb_classes)
-# Y_test = to_categorical(Y_test, nb_classes)
+    # Y_train = np.array(Y_train) 
+    # Y_test = np.array(Y_test)
 
-# input_shape = (64, 64, 3)
+    # nb_classes = 2
+    # Y_train = to_categorical(Y_train, nb_classes)
+    # Y_test = to_categorical(Y_test, nb_classes)
 
-X_train = X_train.astype('float32')
-X_test = X_test.astype('float32')
+    # input_shape = (64, 64, 3)
 
-X_train /= 255
-X_test /= 255
+    X_train = X_train.astype('float32')
+    X_test = X_test.astype('float32')
 
-print(np.shape(X_train))
-print(np.shape(Y_train))
-print(np.shape(X_test))
-print(np.shape(Y_test))
+    X_train /= 255
+    X_test /= 255
 
-augmented_image = ImageDataGenerator(
-    shear_range=0.1,
-)
-# augmented_image.fit(X_train)
+    print(np.shape(X_train))
+    print(np.shape(Y_train))
+    print(np.shape(X_test))
+    print(np.shape(Y_test))
 
-logdir = "logs/scalars/" + datetime.now().strftime("%Y%m%d-%H%M%S")
-tensorboard_callback = keras.callbacks.TensorBoard(log_dir=logdir)
+    augmented_image = ImageDataGenerator(
+        rotation_range=20,
+        zoom_range=0.15,
+        width_shift_range=0.2,
+        height_shift_range=0.2,
+        channel_shift_range=4.,
+        shear_range=0.15,
+        horizontal_flip=True,
+        fill_mode="nearest"
+    )
+    # augmented_image.fit(X_train)
 
-#BUILD THE MODEL
-model = Sequential()
+    logdir = "logs/scalars/" + datetime.now().strftime("%Y%m%d-%H%M%S")
+    tensorboard_callback = keras.callbacks.TensorBoard(log_dir=logdir)
 
-model.add(Conv2D(8, kernel_size=(5, 5), strides=(1, 1),activation='relu',input_shape=(96,96,3),padding='same'))
-model.add(BatchNormalization())
-model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+    #BUILD THE MODEL
+    model = Sequential()
 
-model.add(Conv2D(16, (3, 3),strides=(1,1), activation='relu',padding='same'))
-model.add(BatchNormalization())
-model.add(MaxPooling2D(pool_size=(2, 2),strides=(2,2)))
+    model.add(Conv2D(8, kernel_size=(5, 5), strides=(1, 1),activation='relu',input_shape=(96,96,3),padding='same'))
+    model.add(BatchNormalization())
+    model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
 
-model.add(Conv2D(16, (3, 3),strides=(1,1), activation='relu',padding='same'))
-model.add(BatchNormalization())
-model.add(MaxPooling2D(pool_size=(2, 2),strides=(2,2)))
+    model.add(Conv2D(16, (3, 3),strides=(1,1), activation='relu',padding='same'))
+    model.add(BatchNormalization())
+    model.add(MaxPooling2D(pool_size=(2, 2),strides=(2,2)))
 
-model.add(Conv2D(16, (3, 3),strides=(1,1), activation='relu',padding='same'))
-model.add(BatchNormalization())
-model.add(MaxPooling2D(pool_size=(2, 2),strides=(2,2)))
+    model.add(Conv2D(16, (3, 3),strides=(1,1), activation='relu',padding='same'))
+    model.add(BatchNormalization())
+    model.add(MaxPooling2D(pool_size=(2, 2),strides=(2,2)))
 
-model.add(Conv2D(32, (3, 3),strides=(1,1), activation='relu',padding='same'))
-model.add(BatchNormalization())
-model.add(MaxPooling2D(pool_size=(2, 2),strides=(2,2)))
+    model.add(Conv2D(16, (3, 3),strides=(1,1), activation='relu',padding='same'))
+    model.add(BatchNormalization())
+    model.add(MaxPooling2D(pool_size=(2, 2),strides=(2,2)))
 
-model.add(Flatten())
+    model.add(Conv2D(32, (3, 3),strides=(1,1), activation='relu',padding='same'))
+    model.add(BatchNormalization())
+    model.add(MaxPooling2D(pool_size=(2, 2),strides=(2,2)))
 
-model.add(Dropout(0.5))
+    model.add(Flatten())
 
-model.add(Dense(3000, activation='relu'))
-model.add(BatchNormalization())
+    model.add(Dropout(0.5))
 
-model.add(Dropout(0.5))
+    model.add(Dense(4000, activation='relu'))
+    model.add(BatchNormalization())
 
-model.add(Dense(400, activation='relu'))
-model.add(BatchNormalization())
+    model.add(Dropout(0.5))
 
-model.add(Dense(2,activation='softmax'))
-model.summary()
+    model.add(Dense(400, activation='relu'))
+    model.add(BatchNormalization())
 
-# TRAIN THE MODEL 
-adam = Adam(lr=0.0001)
-model.compile(loss='categorical_crossentropy', optimizer=adam, metrics=['accuracy'])
+    model.add(Dense(2,activation='softmax'))
+    model.summary()
 
-batch_size = 16
-epochs = 150
+    # TRAIN THE MODEL 
+    adam = Adam(lr=0.0001)
+    model.compile(loss='categorical_crossentropy', optimizer=adam, metrics=['accuracy'])
 
-model.fit_generator(augmented_image.flow(X_train,Y_train,batch_size=batch_size),epochs=epochs,validation_data=(X_test,Y_test),
-verbose=1,steps_per_epoch = X_train.shape[0]//batch_size,callbacks=[tensorboard_callback],)
-# # model.fit(X_train, Y_train, batch_size=32, epochs=20,
-# #                  verbose=1, validation_data=(X_test, Y_test))
+    batch_size = 16
+    epochs = 150
 
-#save model
-model.save('models/model'+datetime.now().strftime("%Y%m%d-%H%M%S")+'.h5')
-print("Saved model to disk")
+    model.fit_generator(augmented_image.flow(X_train,Y_train,batch_size=batch_size),epochs=epochs,validation_data=(X_test,Y_test),
+    verbose=1,steps_per_epoch = X_train.shape[0]//batch_size,callbacks=[tensorboard_callback])
+    # # model.fit(X_train, Y_train, batch_size=32, epochs=20,
+    # #                  verbose=1, validation_data=(X_test, Y_test))
 
-prediction = model.predict(X_test)
-dump(prediction, open("prediction"+".pkl", 'wb'))
-print('saved predicted model')
-# PREDICT CLASSES
-scores = model.evaluate(X_test, Y_test, verbose=0)
-print(scores)
-print("%s: %.2f%%" % (model.metrics_names[1], scores[1]*100))
+    #save model
+    model.save('models/model'+datetime.now().strftime("%Y%m%d-%H%M%S")+'.h5')
+    print("Saved model to disk")
 
-#Confution Matrix and Classification Report
-Y_pred = model.predict_generator(augmented_image.flow(X_test,Y_test), X_train.shape[0]//batch_size+1)
-y_pred = np.argmax(Y_pred, axis=1)
-print('Confusion Matrix')
-print(confusion_matrix(Y_test, y_pred))
-print('Classification Report')
-target_names = ['Live', 'Spoof']
-print(classification_report(classes, y_pred, target_names=target_names))
+    prediction = model.predict(X_test)
+    dump(prediction, open("prediction"+".pkl", 'wb'))
+    print('saved predicted model')
+    # PREDICT CLASSES
+    scores = model.evaluate(X_test, Y_test, verbose=0)
+    print(scores)
+    print("%s: %.2f%%" % (model.metrics_names[1], scores[1]*100))
+
+    #Confution Matrix and Classification Report
+    Y_pred = model.predict_generator(augmented_image.flow(X_test,Y_test), X_train.shape[0]//batch_size+1)
+    y_pred = np.argmax(Y_pred, axis=1)
+    print('Confusion Matrix')
+    print(confusion_matrix(Y_test, y_pred))
+    print('Classification Report')
+    target_names = ['Live', 'Spoof']
+    print(classification_report(classes, y_pred, target_names=target_names))

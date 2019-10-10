@@ -39,11 +39,26 @@ def plot_confusion_matrix(y_true, y_pred, matrix_title):
 if __name__ == '__main__':
 #image must be cropped face image
 
+    model = VGG16()
+	#Modify model to remove the last layer
+	model.layers.pop()
+	model = Model(inputs=model.inputs,outputs=model.layers[-1].output)
+	print(model.summary())
+	predictions = []
+	prn = PRN(is_dlib = True)
+	test_path = 'test_data'
+	file = open('depth_features_labels/model_v1.pkl', 'rb')
+	svm = pkl.load(file)
+
     test_path = 'test_data'
     model_loaded = load_model('models/model20191008-160032.h5')
 
     model_loaded.summary()
+    
+    is_live = 0
+    is_spoof = 0
 
+    live_threshold = 0.7
 
     X_test = []
     Y_test = []
@@ -51,6 +66,7 @@ if __name__ == '__main__':
     labels = 0
     target_size = (96,96)
     batch_size = 32
+    spoof_score = 0
     for folder in os.listdir(test_path):
         if folder == '._DS_Store':
             continue
@@ -75,46 +91,50 @@ if __name__ == '__main__':
                 if (p1>32 and p1<(m-32)) and (q1>32 and q1<(n-32)):
                     patch = image[p1-32:p1+32,q1-32:q1+32]
                     patch = cv2.resize(patch,target_size)
-                    X_test.append(patch)
-                    Y_test.append(labels)
-        labels += 1
+                    patch = np.reshape(patch,(1,patch.shape[0],patch.shape[1],patch.shape[2]))
+                    prediction = model_loaded.predict(patch)
+                    print(prediction)
+                    spoof_score = spoof_score + prediction[1]
+                    result = model_loaded.predict_classes(patch)
+                    if result == 0:
+                        live_count += 1
+                    else :
+                        spoof_count += 1
+                    
+                    if live_count > spoof_count:
+                        print('live')
+                        is_live += 1
+                    else:
+                        print('spoof')
+                        is_spoof += 1
+
+            image = cv2.resize(image,target_size)
+			image_shape =  np.shape(image)
+			print(np.shape(image))
+			[h, w, c] = image_shape
+			if c>3:
+				image = image[:,:,:3]
+			print(np.shape(image))
+			pos = prn.process(image)
+			vertices = prn.get_vertices(pos)
+			depth_image = get_depth_image(vertices, prn.triangles, h, w, True)
+			print(vertices)
+			imsave('depth_image.jpg',depth_image)
+			load_image = load_img('depth_image.jpg',target_size=target_size)
+			load_image = img_to_array(load_image)
+
+			load_image = load_image.reshape((1, load_image.shape[0], load_image.shape[1], load_image.shape[2]))
+			# # prepare the image for the VGG model
+			load_image = preprocess_input(load_image)
+			# get features
+			img_feature = model.predict(load_image, verbose=0)
+			predict = svm.predict(img_feature)
+			print(predict)
+
+            if is_live > is_spoof and predit[0] > live_threshold:
+                print('LIVE')
+            else:
+                print('SPOOF')
 
 
-    X_test = np.array(X_test)
-    Y_test = np.array(Y_test)
-        
-    print(np.shape(X_test))
-    print(np.shape(Y_test))
-    Y_test = to_categorical(Y_test,2)
-    
-    print(Y_test)
-    probabilities = model_loaded.predict(X_test)
-    probabilities = np.round(probabilities)
-    print(probabilities)
-    # plot_confusion_matrix(np.argmax(Y_test, axis=1), np.argmax(probabilities,axis=1),'Confusion Matrix')
-    cm = confusion_matrix(np.argmax(Y_test, axis=1), np.argmax(probabilities,axis=1))
-    print('Confusion Matrix')
-    print(cm)
-    tn, fp, fn, tp = cm.ravel()
-    print(tn, fp, fn, tp)
-    accuracy = accuracy_score(np.argmax(Y_test, axis=1), np.argmax(probabilities,axis=1))
-    print('Accuracy',accuracy)
-    # plot_confusion_matrix(Y_test,probabilities,"Confusion matrix")
-
-
-    # # Y_pred = model.predict_generator(test_gen.flow(X_test,Y_test), X_test.shape[0] // batch_size+1)
-    # # y_pred = np.argmax(Y_pred, axis=1)
-    # # print('Confusion Matrix')
-    # # print(confusion_matrix(validation_generator.classes, y_pred))
-    # # print('Classification Report')
-    # # target_names = ['Cats', 'Dogs', 'Horse']
-    # # print(classification_report(validation_generator.classes, y_pred, target_names=target_names))
-
-
-    # prediction = model_loaded.predict(X_test)
-    # dump(prediction, open("prediction"+".pkl", 'wb'))
-    # print('saved predicted model')
-    # # PREDICT CLASSES
-    # scores = model_loaded.evaluate(X_test, Y_test, verbose=0)
-    # print(scores)
-    # print("%s: %.2f%%" % (model_loaded.metrics_names[1], scores[1]*100))
+            
