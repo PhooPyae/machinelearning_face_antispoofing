@@ -61,11 +61,9 @@ if __name__ == '__main__':
 	print(model.summary())
 	predictions = []
 	prn = PRN(is_dlib = True)
-	test_path = 'test_data'
+	test_path = 'sample_test_data'
 	file = open('depth_features_labels/model_v2.pkl', 'rb')
 	svm = pkl.load(file)
-
-	test_path = 'test_data'
 	model_loaded = load_model('models/good/model20191008-160032_73.h5')
 
 	model_loaded.summary()
@@ -79,15 +77,17 @@ if __name__ == '__main__':
 	X_test = []
 	Y_test = []
 	classes_name = []
+	final_result = []
 	labels = 0
 	target_size = (96,96)
 	batch_size = 32
 	spoof_score = 0
+	folder_count = 0
 	for folder in os.listdir(test_path):
 		if folder == '._DS_Store':
 			continue
 		folder_name = test_path+'/'+folder
-		classes_name.append(folder)
+		classes_name.append(folder_count)
 
 		for files in os.listdir(folder_name):
 			if files == '._DS_Store':
@@ -136,6 +136,9 @@ if __name__ == '__main__':
 			live_probability = live_count/ total_count
 			spoof_probability = spoof_count/total_count
 
+			live_probability = round(live_probability,1)
+			spoof_probability = round(spoof_probability,1)
+
 			print('live_probability',live_probability)
 			print('spoof_probability',spoof_probability)
 
@@ -169,8 +172,17 @@ if __name__ == '__main__':
 				print(prob)
 				if (live_probability > spoof_threshold and spoof_probability < live_threshold) and (prob[0] > spoof_threshold and prob[1] < live_threshold):
 					print('LIVE')
+					final_result.append(0)
 				else:
 					print('SPOOF')
+					final_result.append(1)
+		folder_count += 1
+	print(classes_name)
+	print(final_result)
+	pkl.dump(classes_name, open("true_label"+".pkl", 'wb'))
+	pkl.dump(final_result, open("predicted_label"+".pkl", 'wb'))
+		
+
 
 
 			
