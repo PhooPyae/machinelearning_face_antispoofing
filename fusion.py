@@ -61,7 +61,7 @@ if __name__ == '__main__':
 	print(model.summary())
 	predictions = []
 	prn = PRN(is_dlib = True)
-	test_path = 'sample_test_data'
+	test_path = 'test_data'
 	file = open('depth_features_labels/model_v2.pkl', 'rb')
 	svm = pkl.load(file)
 	model_loaded = load_model('models/good/model20191008-160032_73.h5')
@@ -87,7 +87,6 @@ if __name__ == '__main__':
 		if folder == '._DS_Store':
 			continue
 		folder_name = test_path+'/'+folder
-		classes_name.append(folder_count)
 
 		for files in os.listdir(folder_name):
 			if files == '._DS_Store':
@@ -96,6 +95,7 @@ if __name__ == '__main__':
 			spoof_count = 0
 			file_name = folder_name+'/'+files
 			print(file_name)
+			classes_name.append(folder_count)
 			image = cv2.imread(file_name)
 			# print('Image shape',np.shape(image))
 			# convface = cv2.cvtColor(image,cv2.COLOR_BGR2HSV)
@@ -170,7 +170,7 @@ if __name__ == '__main__':
 			
 			for prob in probability:
 				print(prob)
-				if (live_probability > spoof_threshold and spoof_probability < live_threshold) and (prob[0] > spoof_threshold and prob[1] < live_threshold):
+				if (live_probability >= spoof_threshold and spoof_probability <= live_threshold) and (round(prob[0]) >= spoof_threshold and round(prob[1]) <= live_threshold):
 					print('LIVE')
 					final_result.append(0)
 				else:
