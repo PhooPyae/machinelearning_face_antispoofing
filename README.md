@@ -13,7 +13,7 @@ These components can be assumed as streamline of the system. In the meantime, it
 
 ![system architecture](https://user-images.githubusercontent.com/20230956/120360173-77c14980-c32e-11eb-8c20-42e004384135.png)
 
-#### Eyes Movemet Detection
+### Eyes Movemet Detection
 
 ![eyes movement](https://user-images.githubusercontent.com/20230956/120360709-0fbf3300-c32f-11eb-8f40-6a4c93df3180.png)
 
@@ -21,7 +21,7 @@ Challenge-Response approach is mainly used.
 The main idea behind it is that the system generates 3 random challenges and the user needs to act the challenges correctly. This helps to verify the live user action.
 
 
-#### Patch-based CNN
+### Patch-based CNN
 
 ![patch-based](https://user-images.githubusercontent.com/20230956/120361527-ef43a880-c32f-11eb-9832-a3be91060463.png)
 
