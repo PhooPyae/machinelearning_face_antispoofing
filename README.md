@@ -27,8 +27,8 @@ The main idea behind it is that the system generates 3 random challenges and the
 
 Instead of using the whole face image as training data, here I used  patches of face, like the distinct features of a face for example eyes, nose, lips, eyebow.
 This idea is to make the model to learn more details of the features.
-#####SIFT(Scale Invariant Feature Transform) is used to extract the key points with its corresponding description.
-#####The core part is CNN.
+##### SIFT(Scale Invariant Feature Transform) is used to extract the key points with its corresponding description.
+##### CNN (Convolutional Neural Network) to learn the feature and to classify whether the unknown data is live or spoof.
 
 You can read more here : https://ieeexplore.ieee.org/document/8921091/
 
